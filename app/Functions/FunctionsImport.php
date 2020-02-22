@@ -19,6 +19,8 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Functions;
 
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
+use Fisharebest\Webtrees\Contracts\MediaFactoryInterface;
 use Fisharebest\Webtrees\Date;
 use Fisharebest\Webtrees\Exceptions\GedcomErrorException;
 use Fisharebest\Webtrees\Family;
@@ -650,7 +652,7 @@ class FunctionsImport
 
         switch ($type) {
             case Individual::RECORD_TYPE:
-                $record = new Individual($xref, $gedrec, null, $tree);
+                $record = app(IndividualFactoryInterface::class)->new($xref, $gedrec, null, $tree);
                 if (preg_match('/\n1 RIN (.+)/', $gedrec, $match)) {
                     $rin = $match[1];
                 } else {
@@ -730,7 +732,7 @@ class FunctionsImport
                 break;
 
             case Media::RECORD_TYPE:
-                $record = new Media($xref, $gedrec, null, $tree);
+                $record = app(MediaFactoryInterface::class)->new($xref, $gedrec, null, $tree);
 
                 DB::table('media')->insert([
                     'm_id'     => $xref,
@@ -1005,7 +1007,7 @@ class FunctionsImport
             $gedrec = preg_replace('/\n1 FILE (.+)\n1 FORM (.+)\n1 TITL (.+)/', "\n1 FILE $1\n2 FORM $2\n2 TITL $3", $gedrec);
 
             // Create new record
-            $record = new Media($xref, $gedrec, null, $tree);
+            $record = app(MediaFactoryInterface::class)->new($xref, $gedrec, null, $tree);
 
             DB::table('media')->insert([
                 'm_id'     => $xref,

@@ -21,7 +21,11 @@ namespace Fisharebest\Webtrees;
 
 use Closure;
 use Fisharebest\Flysystem\Adapter\ChrootAdapter;
+use Fisharebest\Webtrees\Contracts\FamilyFactoryInterface;
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
+use Fisharebest\Webtrees\Contracts\MediaFactoryInterface;
 use Fisharebest\Webtrees\Contracts\UserInterface;
+use Fisharebest\Webtrees\Factories\GedcomRecordFactory;
 use Fisharebest\Webtrees\Functions\FunctionsExport;
 use Fisharebest\Webtrees\Services\PendingChangesService;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -496,16 +500,19 @@ class Tree
             'user_id'    => Auth::id(),
         ]);
 
+        $gedcom_record_factory = app(GedcomRecordFactory::class);
+        assert($gedcom_record_factory instanceof GedcomRecordFactory);
+
         // Accept this pending change
         if (Auth::user()->getPreference(User::PREF_AUTO_ACCEPT_EDITS)) {
-            $record = new GedcomRecord($xref, $gedcom, null, $this);
+            $record = $gedcom_record_factory->new($xref, $gedcom, null, $this);
 
             app(PendingChangesService::class)->acceptRecord($record);
 
             return $record;
         }
 
-        return new GedcomRecord($xref, '', $gedcom, $this);
+        return $gedcom_record_factory->new($xref, '', $gedcom, $this);
     }
 
     /**
@@ -577,16 +584,19 @@ class Tree
             'user_id'    => Auth::id(),
         ]);
 
+        $family_factory = app(FamilyFactoryInterface::class);
+        assert($family_factory instanceof FamilyFactoryInterface);
+
         // Accept this pending change
         if (Auth::user()->getPreference(User::PREF_AUTO_ACCEPT_EDITS) === '1') {
-            $record = new Family($xref, $gedcom, null, $this);
+            $record = $family_factory->new($xref, $gedcom, null, $this);
 
             app(PendingChangesService::class)->acceptRecord($record);
 
             return $record;
         }
 
-        return new Family($xref, '', $gedcom, $this);
+        return $family_factory->new($xref, '', $gedcom, $this);
     }
 
     /**
@@ -618,16 +628,19 @@ class Tree
             'user_id'    => Auth::id(),
         ]);
 
+        $individual_factory = app(IndividualFactoryInterface::class);
+        assert($individual_factory instanceof IndividualFactoryInterface);
+
         // Accept this pending change
         if (Auth::user()->getPreference(User::PREF_AUTO_ACCEPT_EDITS) === '1') {
-            $record = new Individual($xref, $gedcom, null, $this);
+            $record = $individual_factory->new($xref, $gedcom, null, $this);
 
             app(PendingChangesService::class)->acceptRecord($record);
 
             return $record;
         }
 
-        return new Individual($xref, '', $gedcom, $this);
+        return $individual_factory->new($xref, '', $gedcom, $this);
     }
 
     /**
@@ -659,16 +672,19 @@ class Tree
             'user_id'    => Auth::id(),
         ]);
 
+        $media_factory = app(MediaFactoryInterface::class);
+        assert($media_factory instanceof MediaFactoryInterface);
+
         // Accept this pending change
         if (Auth::user()->getPreference(User::PREF_AUTO_ACCEPT_EDITS) === '1') {
-            $record = new Media($xref, $gedcom, null, $this);
+            $record = $media_factory->new($xref, $gedcom, null, $this);
 
             app(PendingChangesService::class)->acceptRecord($record);
 
             return $record;
         }
 
-        return new Media($xref, '', $gedcom, $this);
+        return $media_factory->new($xref, '', $gedcom, $this);
     }
 
     /**
@@ -681,13 +697,19 @@ class Tree
      */
     public function significantIndividual(UserInterface $user, $xref = ''): Individual
     {
+        $family_factory = app(FamilyFactoryInterface::class);
+        assert($family_factory instanceof FamilyFactoryInterface);
+
+        $individual_factory = app(IndividualFactoryInterface::class);
+        assert($individual_factory instanceof IndividualFactoryInterface);
+
         if ($xref === '') {
             $individual = null;
         } else {
-            $individual = Individual::getInstance($xref, $this);
+            $individual = $individual_factory->make($xref, $this);
 
             if ($individual === null) {
-                $family = Family::getInstance($xref, $this);
+                $family = $family_factory->make($xref, $this);
 
                 if ($family instanceof Family) {
                     $individual = $family->spouses()->first() ?? $family->children()->first();
@@ -696,26 +718,28 @@ class Tree
         }
 
         if ($individual === null && $this->getUserPreference($user, User::PREF_TREE_DEFAULT_XREF) !== '') {
-            $individual = Individual::getInstance($this->getUserPreference($user, User::PREF_TREE_DEFAULT_XREF), $this);
+            $individual = $individual_factory->make($this->getUserPreference($user, User::PREF_TREE_DEFAULT_XREF), $this);
         }
 
         if ($individual === null && $this->getUserPreference($user, User::PREF_TREE_ACCOUNT_XREF) !== '') {
-            $individual = Individual::getInstance($this->getUserPreference($user, User::PREF_TREE_ACCOUNT_XREF), $this);
+            $individual = $individual_factory->make($this->getUserPreference($user, User::PREF_TREE_ACCOUNT_XREF), $this);
         }
 
         if ($individual === null && $this->getPreference('PEDIGREE_ROOT_ID') !== '') {
-            $individual = Individual::getInstance($this->getPreference('PEDIGREE_ROOT_ID'), $this);
+            $individual = $individual_factory->make($this->getPreference('PEDIGREE_ROOT_ID'), $this);
         }
+
         if ($individual === null) {
             $xref = (string) DB::table('individuals')
                 ->where('i_file', '=', $this->id())
                 ->min('i_id');
 
-            $individual = Individual::getInstance($xref, $this);
+            $individual = $individual_factory->make($xref, $this);
         }
+
         if ($individual === null) {
             // always return a record
-            $individual = new Individual('I', '0 @I@ INDI', null, $this);
+            $individual = $individual_factory->new('I', '0 @I@ INDI', null, $this);
         }
 
         return $individual;

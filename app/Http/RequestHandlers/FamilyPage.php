@@ -21,6 +21,7 @@ namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Fisharebest\Webtrees\Auth;
+use Fisharebest\Webtrees\Contracts\FamilyFactoryInterface;
 use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\Http\ViewResponseTrait;
 use Fisharebest\Webtrees\Services\ClipboardService;
@@ -45,14 +46,21 @@ class FamilyPage implements RequestHandlerInterface
     /** @var ClipboardService */
     private $clipboard_service;
 
+    /** @var FamilyFactoryInterface */
+    private $family_factory;
+
     /**
      * FamilyPage constructor.
      *
-     * @param ClipboardService $clipboard_service
+     * @param ClipboardService       $clipboard_service
+     * @param FamilyFactoryInterface $family_factory
      */
-    public function __construct(ClipboardService $clipboard_service)
-    {
+    public function __construct(
+        ClipboardService $clipboard_service,
+        FamilyFactoryInterface $family_factory
+    ) {
         $this->clipboard_service = $clipboard_service;
+        $this->family_factory    = $family_factory;
     }
 
     /**
@@ -68,7 +76,7 @@ class FamilyPage implements RequestHandlerInterface
         $xref = $request->getAttribute('xref');
         assert(is_string($xref));
 
-        $family = Family::getInstance($xref, $tree);
+        $family = $this->family_factory->make($xref, $tree);
         $family = Auth::checkFamilyAccess($family, false);
 
         // Redirect to correct xref/slug

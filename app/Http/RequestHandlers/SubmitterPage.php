@@ -21,6 +21,7 @@ namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Fisharebest\Webtrees\Auth;
+use Fisharebest\Webtrees\Contracts\SubmitterFactoryInterface;
 use Fisharebest\Webtrees\Fact;
 use Fisharebest\Webtrees\Http\ViewResponseTrait;
 use Fisharebest\Webtrees\Submitter;
@@ -59,6 +60,19 @@ class SubmitterPage implements RequestHandlerInterface
         'CHAN',
     ];
 
+    /** @var SubmitterFactoryInterface */
+    private $submitter_factory;
+
+    /**
+     * SubmitterPage constructor.
+     *
+     * @param SubmitterFactoryInterface $submitter_factory
+     */
+    private function __construct(SubmitterFactoryInterface $submitter_factory)
+    {
+        $this->submitter_factory = $submitter_factory;
+    }
+
     /**
      * @param ServerRequestInterface $request
      *
@@ -72,7 +86,7 @@ class SubmitterPage implements RequestHandlerInterface
         $xref = $request->getAttribute('xref');
         assert(is_string($xref));
 
-        $submitter = Submitter::getInstance($xref, $tree);
+        $submitter = $this->submitter_factory->make($xref, $tree);
         $submitter = Auth::checkSubmitterAccess($submitter, false);
 
         // Redirect to correct xref/slug

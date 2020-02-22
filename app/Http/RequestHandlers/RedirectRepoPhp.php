@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
 use Fig\Http\Message\StatusCodeInterface;
+use Fisharebest\Webtrees\Contracts\RepositoryFactoryInterface;
 use Fisharebest\Webtrees\Exceptions\RepositoryNotFoundException;
 use Fisharebest\Webtrees\Repository;
 use Fisharebest\Webtrees\Services\TreeService;
@@ -35,15 +36,22 @@ use function redirect;
  */
 class RedirectRepoPhp implements RequestHandlerInterface
 {
+    /** @var RepositoryFactoryInterface */
+    private $repository_factory;
+
     /** @var TreeService */
     private $tree_service;
 
     /**
-     * @param TreeService $tree_service
+     * @param RepositoryFactoryInterface $repository_factory
+     * @param TreeService                $tree_service
      */
-    public function __construct(TreeService $tree_service)
-    {
-        $this->tree_service = $tree_service;
+    public function __construct(
+        RepositoryFactoryInterface $repository_factory,
+        TreeService $tree_service
+    ) {
+        $this->tree_service       = $tree_service;
+        $this->repository_factory = $repository_factory;
     }
 
     /**
@@ -58,7 +66,7 @@ class RedirectRepoPhp implements RequestHandlerInterface
 
         if ($tree instanceof Tree) {
             $xref       = $request->getQueryParams()['rid'] ?? '';
-            $repository = Repository::getInstance($xref, $tree);
+            $repository = $this->repository_factory->make($xref, $tree);
 
             if ($repository instanceof Repository) {
                 return redirect($repository->url(), StatusCodeInterface::STATUS_MOVED_PERMANENTLY);

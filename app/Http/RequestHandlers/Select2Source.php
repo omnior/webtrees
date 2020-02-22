@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
+use Fisharebest\Webtrees\Contracts\SourceFactoryInterface;
 use Fisharebest\Webtrees\Services\SearchService;
 use Fisharebest\Webtrees\Source;
 use Fisharebest\Webtrees\Tree;
@@ -34,15 +35,21 @@ class Select2Source extends AbstractSelect2Handler
     /** @var SearchService */
     protected $search_service;
 
+    /** @var SourceFactoryInterface */
+    private $source_factory;
+
     /**
      * AutocompleteController constructor.
      *
-     * @param SearchService $search_service
+     * @param SearchService          $search_service
+     * @param SourceFactoryInterface $source_factory
      */
     public function __construct(
-        SearchService $search_service
+        SearchService $search_service,
+        SourceFactoryInterface $source_factory
     ) {
         $this->search_service = $search_service;
+        $this->source_factory = $source_factory;
     }
 
     /**
@@ -58,7 +65,7 @@ class Select2Source extends AbstractSelect2Handler
     protected function search(Tree $tree, string $query, int $offset, int $limit): Collection
     {
         // Search by XREF
-        $source = Source::getInstance($query, $tree);
+        $source = $this->source_factory->make($query, $tree);
 
         if ($source instanceof Source) {
             $results = new Collection([$source]);

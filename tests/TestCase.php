@@ -22,6 +22,22 @@ namespace Fisharebest\Webtrees;
 use Aura\Router\Route;
 use Aura\Router\RouterContainer;
 use Fig\Http\Message\RequestMethodInterface;
+use Fisharebest\Webtrees\Contracts\FamilyFactoryInterface;
+use Fisharebest\Webtrees\Contracts\GedcomRecordFactoryInterface;
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
+use Fisharebest\Webtrees\Contracts\MediaFactoryInterface;
+use Fisharebest\Webtrees\Contracts\NoteFactoryInterface;
+use Fisharebest\Webtrees\Contracts\RepositoryFactoryInterface;
+use Fisharebest\Webtrees\Contracts\SourceFactoryInterface;
+use Fisharebest\Webtrees\Contracts\SubmitterFactoryInterface;
+use Fisharebest\Webtrees\Factories\FamilyFactory;
+use Fisharebest\Webtrees\Factories\GedcomRecordFactory;
+use Fisharebest\Webtrees\Factories\IndividualFactory;
+use Fisharebest\Webtrees\Factories\MediaFactory;
+use Fisharebest\Webtrees\Factories\NoteFactory;
+use Fisharebest\Webtrees\Factories\RepositoryFactory;
+use Fisharebest\Webtrees\Factories\SourceFactory;
+use Fisharebest\Webtrees\Factories\SubmitterFactory;
 use Fisharebest\Webtrees\Http\Controllers\GedcomFileController;
 use Fisharebest\Webtrees\Http\Routes\WebRoutes;
 use Fisharebest\Webtrees\Module\ModuleThemeInterface;
@@ -45,6 +61,7 @@ use Psr\Http\Message\UriFactoryInterface;
 use Symfony\Component\Cache\Adapter\NullAdapter;
 
 use function app;
+use function assert;
 use function basename;
 use function filesize;
 use function http_build_query;
@@ -69,17 +86,29 @@ class TestCase extends \PHPUnit\Framework\TestCase
     {
         parent::setUpBeforeClass();
 
+        $app = app();
+
         // Use nyholm as our PSR7 factory
-        app()->bind(ResponseFactoryInterface::class, Psr17Factory::class);
-        app()->bind(ServerRequestFactoryInterface::class, Psr17Factory::class);
-        app()->bind(StreamFactoryInterface::class, Psr17Factory::class);
-        app()->bind(UploadedFileFactoryInterface::class, Psr17Factory::class);
-        app()->bind(UriFactoryInterface::class, Psr17Factory::class);
+        $app->bind(ResponseFactoryInterface::class, Psr17Factory::class);
+        $app->bind(ServerRequestFactoryInterface::class, Psr17Factory::class);
+        $app->bind(StreamFactoryInterface::class, Psr17Factory::class);
+        $app->bind(UploadedFileFactoryInterface::class, Psr17Factory::class);
+        $app->bind(UriFactoryInterface::class, Psr17Factory::class);
 
         // Disable the cache.
-        app()->instance('cache.array', new Cache(new NullAdapter()));
+        $cache = new Cache(new NullAdapter());
+        $app->instance('cache.array', $cache);
 
-        app()->bind(ModuleThemeInterface::class, WebtreesTheme::class);
+        $app->bind(ModuleThemeInterface::class, WebtreesTheme::class);
+
+        $app->instance(FamilyFactoryInterface::class, new FamilyFactory($cache));
+        $app->instance(GedcomRecordFactoryInterface::class, new GedcomRecordFactory($cache));
+        $app->instance(IndividualFactoryInterface::class, new IndividualFactory($cache));
+        $app->instance(MediaFactoryInterface::class, new MediaFactory($cache));
+        $app->instance(NoteFactoryInterface::class, new NoteFactory($cache));
+        $app->instance(RepositoryFactoryInterface::class, new RepositoryFactory($cache));
+        $app->instance(SourceFactoryInterface::class, new SourceFactory($cache));
+        $app->instance(SubmitterFactoryInterface::class, new SubmitterFactory($cache));
 
         // Need the routing table, to generate URLs.
         $router_container = new RouterContainer('/');
@@ -208,9 +237,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
             DB::connection()->rollBack();
         }
 
-        Site::$preferences                  = [];
-        GedcomRecord::$gedcom_record_cache  = null;
-        GedcomRecord::$pending_record_cache = null;
+        Site::$preferences = [];
 
         Auth::logout();
     }

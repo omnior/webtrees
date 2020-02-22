@@ -20,6 +20,13 @@ declare(strict_types=1);
 namespace Fisharebest\Webtrees\Services;
 
 use Closure;
+use Fisharebest\Webtrees\Contracts\FamilyFactoryInterface;
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
+use Fisharebest\Webtrees\Contracts\MediaFactoryInterface;
+use Fisharebest\Webtrees\Contracts\NoteFactoryInterface;
+use Fisharebest\Webtrees\Contracts\RepositoryFactoryInterface;
+use Fisharebest\Webtrees\Contracts\SourceFactoryInterface;
+use Fisharebest\Webtrees\Contracts\SubmitterFactoryInterface;
 use Fisharebest\Webtrees\Date;
 use Fisharebest\Webtrees\Exceptions\HttpServiceUnavailableException;
 use Fisharebest\Webtrees\Family;
@@ -1056,10 +1063,12 @@ class SearchService
      */
     private function familyRowMapper(): Closure
     {
-        return function (stdClass $row): Family {
+        $family_factory = app(FamilyFactoryInterface::class);
+
+        return function (stdClass $row) use($family_factory): Family {
             $tree = $this->tree_service->find((int) $row->f_file);
 
-            return Family::rowMapper($tree)($row);
+            return $family_factory->mapper($tree)($row);
         };
     }
 
@@ -1070,10 +1079,12 @@ class SearchService
      */
     private function individualRowMapper(): Closure
     {
-        return function (stdClass $row): Individual {
+        $individual_factory = app(IndividualFactoryInterface::class);
+
+        return function (stdClass $row) use ($individual_factory): Individual {
             $tree = $this->tree_service->find((int) $row->i_file);
 
-            return Individual::rowMapper($tree)($row);
+            return $individual_factory->mapper($tree)($row);
         };
     }
 
@@ -1084,10 +1095,12 @@ class SearchService
      */
     private function mediaRowMapper(): Closure
     {
-        return function (stdClass $row): Media {
+        $media_factory = app(MediaFactoryInterface::class);
+
+        return function (stdClass $row) use ($media_factory): Media {
             $tree = $this->tree_service->find((int) $row->m_file);
 
-            return Media::rowMapper($tree)($row);
+            return $media_factory->mapper($tree)($row);
         };
     }
 
@@ -1098,10 +1111,12 @@ class SearchService
      */
     private function noteRowMapper(): Closure
     {
-        return function (stdClass $row): Note {
+        $note_factory = app(NoteFactoryInterface::class);
+
+        return function (stdClass $row) use ($note_factory): Note {
             $tree = $this->tree_service->find((int) $row->o_file);
 
-            return Note::rowMapper($tree)($row);
+            return $note_factory->mapper($tree)($row);
         };
     }
 
@@ -1112,10 +1127,12 @@ class SearchService
      */
     private function repositoryRowMapper(): Closure
     {
-        return function (stdClass $row): Repository {
+        $repository_factory = app(RepositoryFactoryInterface::class);
+
+        return function (stdClass $row) use ($repository_factory): Repository {
             $tree = $this->tree_service->find((int) $row->o_file);
 
-            return Repository::rowMapper($tree)($row);
+            return $repository_factory->mapper($tree)($row);
         };
     }
 
@@ -1126,10 +1143,12 @@ class SearchService
      */
     private function sourceRowMapper(): Closure
     {
-        return function (stdClass $row): Source {
+        $source_factory = app(SourceFactoryInterface::class);
+
+        return function (stdClass $row) use ($source_factory): Source {
             $tree = $this->tree_service->find((int) $row->s_file);
 
-            return Source::rowMapper($tree)($row);
+            return $source_factory->mapper($tree)($row);
         };
     }
 
@@ -1140,10 +1159,12 @@ class SearchService
      */
     private function submitterRowMapper(): Closure
     {
-        return function (stdClass $row): Submitter {
+        $submitter_factory = app(SubmitterFactoryInterface::class);
+
+        return function (stdClass $row) use ($submitter_factory): Submitter {
             $tree = $this->tree_service->find((int) $row->o_file);
 
-            return Submitter::rowMapper($tree)($row);
+            return $submitter_factory->mapper($tree)($row);
         };
     }
 }

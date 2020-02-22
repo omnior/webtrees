@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
+use Fisharebest\Webtrees\Contracts\MediaFactoryInterface;
 use Fisharebest\Webtrees\Media;
 use Fisharebest\Webtrees\Services\SearchService;
 use Fisharebest\Webtrees\Tree;
@@ -31,17 +32,23 @@ use function view;
  */
 class Select2MediaObject extends AbstractSelect2Handler
 {
+    /** @var MediaFactoryInterface */
+    private $media_factory;
+
     /** @var SearchService */
     protected $search_service;
 
     /**
      * AutocompleteController constructor.
      *
-     * @param SearchService $search_service
+     * @param MediaFactoryInterface $media_factory
+     * @param SearchService         $search_service
      */
     public function __construct(
+        MediaFactoryInterface $media_factory,
         SearchService $search_service
     ) {
+        $this->media_factory  = $media_factory;
         $this->search_service = $search_service;
     }
 
@@ -58,7 +65,7 @@ class Select2MediaObject extends AbstractSelect2Handler
     protected function search(Tree $tree, string $query, int $offset, int $limit): Collection
     {
         // Search by XREF
-        $media = Media::getInstance($query, $tree);
+        $media = $this->media_factory->make($query, $tree);
 
         if ($media instanceof Media) {
             $results = new Collection([$media]);

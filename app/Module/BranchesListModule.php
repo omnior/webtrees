@@ -22,11 +22,11 @@ namespace Fisharebest\Webtrees\Module;
 use Fisharebest\Webtrees\Auth;
 use Fisharebest\Webtrees\Http\Controllers\BranchesController;
 use Fisharebest\Webtrees\I18N;
-use Fisharebest\Webtrees\Services\ModuleService;
 use Fisharebest\Webtrees\Tree;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
+use function app;
 use function assert;
 use function redirect;
 use function route;
@@ -99,7 +99,8 @@ class BranchesListModule extends AbstractModule implements ModuleListInterface
 
         Auth::checkComponentAccess($this, ModuleListInterface::class, $tree, $user);
       
-        $listController = new BranchesController(app(ModuleService::class));
+        $listController = app(BranchesController::class);
+
         return $listController->page($request);
     }
 

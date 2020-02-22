@@ -20,11 +20,14 @@ declare(strict_types=1);
 namespace Fisharebest\Webtrees;
 
 use Closure;
-use Exception;
+use Fisharebest\Webtrees\Contracts\GedcomRecordFactoryInterface;
+use Fisharebest\Webtrees\Contracts\NoteFactoryInterface;
 use Fisharebest\Webtrees\Http\RequestHandlers\NotePage;
 use Illuminate\Database\Capsule\Manager as DB;
 use Illuminate\Support\Str;
-use stdClass;
+
+use function app;
+use function assert;
 
 /**
  * A GEDCOM note (NOTE) object.
@@ -38,18 +41,15 @@ class Note extends GedcomRecord
     /**
      * A closure which will create a record from a database row.
      *
+     * @deprecated - Use the factory directly.
+     *
      * @param Tree $tree
      *
      * @return Closure
      */
     public static function rowMapper(Tree $tree): Closure
     {
-        return static function (stdClass $row) use ($tree): Note {
-            $note = Note::getInstance($row->o_id, $tree, $row->o_gedcom);
-            assert($note instanceof Note);
-
-            return $note;
-        };
+        return app(NoteFactoryInterface::class)->mapper($tree);
     }
 
     /**
@@ -57,23 +57,17 @@ class Note extends GedcomRecord
      * we just receive the XREF. For bulk records (such as lists
      * and search results) we can receive the GEDCOM data as well.
      *
+     * @deprecated - Use GedcomRecordFactory object directly
+     *
      * @param string      $xref
      * @param Tree        $tree
      * @param string|null $gedcom
-     *
-     * @throws Exception
      *
      * @return Note|null
      */
     public static function getInstance(string $xref, Tree $tree, string $gedcom = null): ?Note
     {
-        $record = parent::getInstance($xref, $tree, $gedcom);
-
-        if ($record instanceof self) {
-            return $record;
-        }
-
-        return null;
+        return app(NoteFactoryInterface::class)->make($xref, $tree, $gedcom);
     }
 
     /**
@@ -99,6 +93,9 @@ class Note extends GedcomRecord
      */
     protected function canShowByType(int $access_level): bool
     {
+        $gedcom_record_factory = app(GedcomRecordFactoryInterface::class);
+        assert($gedcom_record_factory instanceof GedcomRecordFactoryInterface);
+
         // Hide notes if they are attached to private records
         $linked_ids = DB::table('link')
             ->where('l_file', '=', $this->tree->id())
@@ -106,8 +103,9 @@ class Note extends GedcomRecord
             ->pluck('l_from');
 
         foreach ($linked_ids as $linked_id) {
-            $linked_record = GedcomRecord::getInstance($linked_id, $this->tree);
-            if ($linked_record && !$linked_record->canShow($access_level)) {
+            $linked_record = $gedcom_record_factory->make($linked_id, $this->tree);
+
+            if ($linked_record instanceof GedcomRecord && !$linked_record->canShow($access_level)) {
                 return false;
             }
         }
@@ -126,23 +124,6 @@ class Note extends GedcomRecord
     protected function createPrivateGedcomRecord(int $access_level): string
     {
         return '0 @' . $this->xref . '@ NOTE ' . I18N::translate('Private');
-    }
-
-    /**
-     * Fetch data from the database
-     *
-     * @param string $xref
-     * @param int    $tree_id
-     *
-     * @return string|null
-     */
-    protected static function fetchGedcomRecord(string $xref, int $tree_id): ?string
-    {
-        return DB::table('other')
-            ->where('o_id', '=', $xref)
-            ->where('o_file', '=', $tree_id)
-            ->where('o_type', '=', self::RECORD_TYPE)
-            ->value('o_gedcom');
     }
 
     /**

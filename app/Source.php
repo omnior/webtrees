@@ -20,10 +20,12 @@ declare(strict_types=1);
 namespace Fisharebest\Webtrees;
 
 use Closure;
-use Exception;
+use Fisharebest\Webtrees\Contracts\RepositoryFactoryInterface;
+use Fisharebest\Webtrees\Contracts\SourceFactoryInterface;
 use Fisharebest\Webtrees\Http\RequestHandlers\SourcePage;
-use Illuminate\Database\Capsule\Manager as DB;
-use stdClass;
+
+use function app;
+use function assert;
 
 /**
  * A GEDCOM source (SOUR) object.
@@ -37,18 +39,15 @@ class Source extends GedcomRecord
     /**
      * A closure which will create a record from a database row.
      *
+     * @deprecated - Use the factory directly.
+     *
      * @param Tree $tree
      *
      * @return Closure
      */
     public static function rowMapper(Tree $tree): Closure
     {
-        return static function (stdClass $row) use ($tree): Source {
-            $source = Source::getInstance($row->s_id, $tree, $row->s_gedcom);
-            assert($source instanceof Source);
-
-            return $source;
-        };
+        return app(SourceFactoryInterface::class)->mapper($tree);
     }
 
     /**
@@ -56,23 +55,17 @@ class Source extends GedcomRecord
      * we just receive the XREF. For bulk records (such as lists
      * and search results) we can receive the GEDCOM data as well.
      *
+     * @deprecated - Use GedcomRecordFactory object directly
+     *
      * @param string      $xref
      * @param Tree        $tree
      * @param string|null $gedcom
-     *
-     * @throws Exception
      *
      * @return Source|null
      */
     public static function getInstance(string $xref, Tree $tree, string $gedcom = null): ?Source
     {
-        $record = parent::getInstance($xref, $tree, $gedcom);
-
-        if ($record instanceof self) {
-            return $record;
-        }
-
-        return null;
+        return app(SourceFactoryInterface::class)->make($xref, $tree, $gedcom);
     }
 
     /**
@@ -84,10 +77,13 @@ class Source extends GedcomRecord
      */
     protected function canShowByType(int $access_level): bool
     {
+        $repository_factory = app(RepositoryFactoryInterface::class);
+        assert($repository_factory instanceof RepositoryFactoryInterface);
+
         // Hide sources if they are attached to private repositories ...
         preg_match_all('/\n1 REPO @(.+)@/', $this->gedcom, $matches);
         foreach ($matches[1] as $match) {
-            $repo = Repository::getInstance($match, $this->tree);
+            $repo = $repository_factory->make($match, $this->tree);
             if ($repo && !$repo->canShow($access_level)) {
                 return false;
             }
@@ -107,22 +103,6 @@ class Source extends GedcomRecord
     protected function createPrivateGedcomRecord(int $access_level): string
     {
         return '0 @' . $this->xref . "@ SOUR\n1 TITL " . I18N::translate('Private');
-    }
-
-    /**
-     * Fetch data from the database
-     *
-     * @param string $xref
-     * @param int    $tree_id
-     *
-     * @return string|null
-     */
-    protected static function fetchGedcomRecord(string $xref, int $tree_id): ?string
-    {
-        return DB::table('sources')
-            ->where('s_id', '=', $xref)
-            ->where('s_file', '=', $tree_id)
-            ->value('s_gedcom');
     }
 
     /**

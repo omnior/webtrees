@@ -21,9 +21,10 @@ namespace Fisharebest\Webtrees\Http\Controllers\Admin;
 
 use Fig\Http\Message\RequestMethodInterface;
 use Fig\Http\Message\StatusCodeInterface;
-use Fisharebest\Webtrees\Services\DatatablesService;
 use Fisharebest\Webtrees\Services\TreeService;
 use Fisharebest\Webtrees\TestCase;
+
+use function app;
 
 /**
  * Test FixLevel0MediaControllerTest class.
@@ -39,11 +40,9 @@ class FixLevel0MediaControllerTest extends TestCase
      */
     public function testFixLevel0Media(): void
     {
-        $datatables_service = new DatatablesService();
-        $tree_service       = new TreeService();
-        $controller         = new FixLevel0MediaController($datatables_service, $tree_service);
-        $request            = self::createRequest();
-        $response           = $controller->fixLevel0Media($request);
+        $controller = app(FixLevel0MediaController::class);
+        $request    = self::createRequest();
+        $response   = $controller->fixLevel0Media($request);
 
         $this->assertSame(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
     }
@@ -55,7 +54,7 @@ class FixLevel0MediaControllerTest extends TestCase
     {
         $tree_service = new TreeService();
         $tree         = $tree_service->create('name', 'title');
-        $controller   = new FixLevel0MediaController(new DatatablesService(), $tree_service);
+        $controller   = app(FixLevel0MediaController::class);
         $request      = self::createRequest(RequestMethodInterface::METHOD_POST, [], [
             'tree_id'   => $tree->id(),
             'fact_id'   => '',
@@ -72,12 +71,11 @@ class FixLevel0MediaControllerTest extends TestCase
      */
     public function testFixLevel0MediaData(): void
     {
-        $datatables_service = new DatatablesService();
-        $tree_service       = new TreeService();
-        $tree               = $tree_service->create('name', 'title');
-        $controller         = new FixLevel0MediaController($datatables_service, $tree_service);
-        $request            = self::createRequest(RequestMethodInterface::METHOD_GET, ['tree_id' => $tree->id()]);
-        $response           = $controller->fixLevel0MediaData($request);
+        $tree_service = new TreeService();
+        $tree         = $tree_service->create('name', 'title');
+        $controller   = app(FixLevel0MediaController::class);
+        $request      = self::createRequest(RequestMethodInterface::METHOD_GET, ['tree_id' => $tree->id()]);
+        $response     = $controller->fixLevel0MediaData($request);
 
         $this->assertSame(StatusCodeInterface::STATUS_OK, $response->getStatusCode());
     }

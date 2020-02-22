@@ -21,6 +21,7 @@ namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Fisharebest\Webtrees\Auth;
+use Fisharebest\Webtrees\Contracts\SourceFactoryInterface;
 use Fisharebest\Webtrees\Fact;
 use Fisharebest\Webtrees\Http\ViewResponseTrait;
 use Fisharebest\Webtrees\Services\ClipboardService;
@@ -66,14 +67,21 @@ class SourcePage implements RequestHandlerInterface
     /** @var ClipboardService */
     private $clipboard_service;
 
+    /** @var SourceFactoryInterface */
+    private $source_factory;
+
     /**
      * SourcePage constructor.
      *
-     * @param ClipboardService $clipboard_service
+     * @param ClipboardService       $clipboard_service
+     * @param SourceFactoryInterface $source_factory
      */
-    public function __construct(ClipboardService $clipboard_service)
-    {
+    public function __construct(
+        ClipboardService $clipboard_service,
+        SourceFactoryInterface $source_factory
+    ) {
         $this->clipboard_service = $clipboard_service;
+        $this->source_factory    = $source_factory;
     }
 
     /**
@@ -89,7 +97,7 @@ class SourcePage implements RequestHandlerInterface
         $xref = $request->getAttribute('xref');
         assert(is_string($xref));
 
-        $source = Source::getInstance($xref, $tree);
+        $source = $this->source_factory->make($xref, $tree);
         $source = Auth::checkSourceAccess($source, false);
 
         // Redirect to correct xref/slug

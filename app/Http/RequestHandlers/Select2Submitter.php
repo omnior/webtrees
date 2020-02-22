@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
+use Fisharebest\Webtrees\Contracts\SubmitterFactoryInterface;
 use Fisharebest\Webtrees\Services\SearchService;
 use Fisharebest\Webtrees\Submitter;
 use Fisharebest\Webtrees\Tree;
@@ -34,15 +35,21 @@ class Select2Submitter extends AbstractSelect2Handler
     /** @var SearchService */
     protected $search_service;
 
+    /** @var SubmitterFactoryInterface */
+    private $submitter_factory;
+
     /**
      * AutocompleteController constructor.
      *
-     * @param SearchService $search_service
+     * @param SearchService             $search_service
+     * @param SubmitterFactoryInterface $submitter_factory
      */
     public function __construct(
-        SearchService $search_service
+        SearchService $search_service,
+        SubmitterFactoryInterface $submitter_factory
     ) {
-        $this->search_service = $search_service;
+        $this->search_service    = $search_service;
+        $this->submitter_factory = $submitter_factory;
     }
 
     /**
@@ -58,7 +65,7 @@ class Select2Submitter extends AbstractSelect2Handler
     protected function search(Tree $tree, string $query, int $offset, int $limit): Collection
     {
         // Search by XREF
-        $submitter = Submitter::getInstance($query, $tree);
+        $submitter = $this->submitter_factory->make($query, $tree);
 
         if ($submitter instanceof Submitter) {
             $results = new Collection([$submitter]);

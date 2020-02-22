@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
 use Fisharebest\Webtrees\Individual;
 use Fisharebest\Webtrees\Services\SearchService;
 use Fisharebest\Webtrees\Tree;
@@ -31,18 +32,24 @@ use function view;
  */
 class Select2Individual extends AbstractSelect2Handler
 {
+    /** @var IndividualFactoryInterface */
+    private $individual_factory;
+
     /** @var SearchService */
     protected $search_service;
 
     /**
      * AutocompleteController constructor.
      *
-     * @param SearchService $search_service
+     * @param IndividualFactoryInterface $individual_factory
+     * @param SearchService              $search_service
      */
     public function __construct(
+        IndividualFactoryInterface $individual_factory,
         SearchService $search_service
     ) {
-        $this->search_service = $search_service;
+        $this->individual_factory = $individual_factory;
+        $this->search_service     = $search_service;
     }
 
     /**
@@ -58,7 +65,7 @@ class Select2Individual extends AbstractSelect2Handler
     protected function search(Tree $tree, string $query, int $offset, int $limit): Collection
     {
         // Search by XREF
-        $individual = Individual::getInstance($query, $tree);
+        $individual = $this->individual_factory->make($query, $tree);
 
         if ($individual instanceof Individual) {
             $results = new Collection([$individual]);

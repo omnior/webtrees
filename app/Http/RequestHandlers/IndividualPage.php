@@ -21,6 +21,7 @@ namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Fisharebest\Webtrees\Auth;
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
 use Fisharebest\Webtrees\Date;
 use Fisharebest\Webtrees\Fact;
 use Fisharebest\Webtrees\Functions\FunctionsDate;
@@ -75,6 +76,9 @@ class IndividualPage implements RequestHandlerInterface
     /** @var ClipboardService */
     private $clipboard_service;
 
+    /** @var IndividualFactoryInterface */
+    private $individual_factory;
+
     /** @var ModuleService */
     private $module_service;
 
@@ -84,15 +88,21 @@ class IndividualPage implements RequestHandlerInterface
     /**
      * IndividualPage constructor.
      *
-     * @param ClipboardService $clipboard_service
-     * @param ModuleService    $module_service
-     * @param UserService      $user_service
+     * @param ClipboardService           $clipboard_service
+     * @param IndividualFactoryInterface $individual_factory
+     * @param ModuleService              $module_service
+     * @param UserService                $user_service
      */
-    public function __construct(ClipboardService $clipboard_service, ModuleService $module_service, UserService $user_service)
-    {
-        $this->clipboard_service = $clipboard_service;
-        $this->module_service    = $module_service;
-        $this->user_service      = $user_service;
+    public function __construct(
+        ClipboardService $clipboard_service,
+        IndividualFactoryInterface $individual_factory,
+        ModuleService $module_service,
+        UserService $user_service
+    ) {
+        $this->clipboard_service  = $clipboard_service;
+        $this->individual_factory = $individual_factory;
+        $this->module_service     = $module_service;
+        $this->user_service       = $user_service;
     }
 
     /**
@@ -108,7 +118,7 @@ class IndividualPage implements RequestHandlerInterface
         $xref = $request->getAttribute('xref');
         assert(is_string($xref));
 
-        $individual = Individual::getInstance($xref, $tree);
+        $individual = $this->individual_factory->make($xref, $tree);
         $individual = Auth::checkIndividualAccess($individual);
 
         // Redirect to correct xref/slug
@@ -245,7 +255,7 @@ class IndividualPage implements RequestHandlerInterface
         $individual = $fact->record();
 
         // Create a dummy record, so we can extract the formatted NAME value from it.
-        $dummy = new Individual(
+        $dummy = $this->individual_factory->new(
             'xref',
             "0 @xref@ INDI\n1 DEAT Y\n" . $fact->gedcom(),
             null,

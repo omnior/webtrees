@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use Fisharebest\Webtrees\Carbon;
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
 use Fisharebest\Webtrees\Date;
 use Fisharebest\Webtrees\Gedcom;
 use Fisharebest\Webtrees\GedcomTag;
 use Fisharebest\Webtrees\I18N;
-use Fisharebest\Webtrees\Individual;
 use Fisharebest\Webtrees\View;
 use Ramsey\Uuid\Uuid;
 
@@ -283,8 +283,8 @@ $marriageAgeData = [
         <tbody>
 
         <?php foreach ($families as $family) : ?>
-            <?php $husb = $family->husband() ?? new Individual('H', '0 @H@ INDI', null, $family->tree()) ?>
-            <?php $wife = $family->wife() ?? new Individual('W', '0 @W@ INDI', null, $family->tree()) ?>
+            <?php $husb = $family->husband() ?? app(IndividualFactoryInterface::class)->new('H', '0 @H@ INDI', null, $family->tree()) ?>
+            <?php $wife = $family->wife() ?? app(IndividualFactoryInterface::class)->new('W', '0 @W@ INDI', null, $family->tree()) ?>
 
             <tr class="<?= $family->isPendingDeletion() ? 'wt-old' : ($family->isPendingAddition() ? 'wt-new' : '') ?>">
                 <!-- Husband name -->

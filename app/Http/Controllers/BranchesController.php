@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace Fisharebest\Webtrees\Http\Controllers;
 
 use Fisharebest\Webtrees\Auth;
+use Fisharebest\Webtrees\Contracts\IndividualFactoryInterface;
 use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\GedcomCode\GedcomCodePedi;
 use Fisharebest\Webtrees\GedcomRecord;
@@ -47,16 +48,23 @@ use function view;
  */
 class BranchesController extends AbstractBaseController
 {
+    /** @var IndividualFactoryInterface */
+    private $individual_factory;
+
     /** @var ModuleService */
     protected $module_service;
 
     /**
      * BranchesController constructor.
      *
+     * @param IndividualFactoryInterface $individual_factory
      * @param ModuleService $module_service
      */
-    public function __construct(ModuleService $module_service)
-    {
+    public function __construct(
+        IndividualFactoryInterface $individual_factory,
+        ModuleService $module_service
+    ) {
+        $this->individual_factory = $individual_factory;
         $this->module_service = $module_service;
     }
 
@@ -116,7 +124,7 @@ class BranchesController extends AbstractBaseController
 
         // Highlight direct-line ancestors of this individual.
         $xref = $tree->getUserPreference($user, User::PREF_TREE_ACCOUNT_XREF);
-        $self = Individual::getInstance($xref, $tree);
+        $self = $this->individual_factory->make($xref, $tree);
 
         if ($surname !== '') {
             $individuals = $this->loadIndividuals($tree, $surname, $soundex_dm, $soundex_std);
